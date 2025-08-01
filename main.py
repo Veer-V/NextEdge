@@ -125,7 +125,56 @@ st.plotly_chart(fig, use_container_width=True)
 
 # Additional prediction graphs
 st.markdown("### 📈 Prediction Insights")
+# ==========================
+# 🔮 Predict Future Performance
+# ==========================
 
+st.markdown("## 🔮 Future Performance Prediction")
+
+# Prepare input features for new predictions
+with st.form("future_prediction_form"):
+    st.markdown("### 🧪 Input Hypothetical/Estimated Values")
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        projected_attendance = st.slider("Projected Attendance (%)", 50, 100, int(student_data["Attendance_Percentage"]))
+    with col2:
+        projected_participation = st.slider("Projected Participation Score (0-10)", 0, 10, int(student_data["Participation_Score"]))
+    with col3:
+        projected_internal3 = st.slider("Expected Internal 3 Score", 0, 25, 15)
+
+    submitted = st.form_submit_button("Predict Future Outcome")
+
+    if submitted:
+        # Assume internal 3 has a similar weight as internal 1 & 2
+        internal_1 = student_data["Internal_Assessment_1"]
+        internal_2 = student_data["Internal_Assessment_2"]
+        previous_grade = student_data["Previous_Semester_Grade"]
+
+        total_predicted_score = internal_1 + internal_2 + projected_internal3
+
+        # Display Predictions
+        st.markdown(f"### 🎯 **Total Predicted Internal Score:** `{total_predicted_score}/75`")
+        st.markdown(f"### 📚 **Final Predicted Performance:** `{round(total_predicted_score / 75 * 100, 2)}%`")
+        st.markdown(f"### 📅 **Predicted Attendance Compliance:** {'✅ Likely Satisfactory' if projected_attendance >= 75 else '⚠️ At Risk'}")
+
+        if total_predicted_score >= 45:
+            st.success("🚀 The student is likely to pass based on projected scores.")
+        else:
+            st.error("🔻 The student might need improvement to pass.")
+
+        # Display radar/spider chart
+        radar_df = pd.DataFrame({
+            'Criteria': ['Internal 1', 'Internal 2', 'Internal 3 (Predicted)', 'Attendance', 'Participation'],
+            'Score': [internal_1, internal_2, projected_internal3, projected_attendance / 100 * 25, projected_participation * 2.5]
+        })
+
+        fig_radar = px.line_polar(radar_df, r='Score', theta='Criteria', line_close=True,
+                                  title="🧭 Projected Academic Balance Radar",
+                                  color_discrete_sequence=["#EF553B" if not st.session_state.dark_mode else "#00CC96"])
+        fig_radar.update_traces(fill='toself')
+        st.plotly_chart(fig_radar, use_container_width=True)
+# ==========================
 # Prediction distribution histogram
 predictions = model.predict(df[[
     "Internal_Assessment_1", "Internal_Assessment_2",
